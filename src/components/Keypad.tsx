@@ -3,12 +3,12 @@ import {
   Keypad_Letters_ROW2,
   Keypad_Letters_ROW3,
 } from "../common/letters";
+import { UsedLetters } from "../common/type";
 
 interface KeypadProps {
-  usedKeys: { [key: string]: string };
+  usedKeys: UsedLetters;
   canSubmit: boolean;
   onKeyPressedCb: (e: KeyboardEvent) => void;
-  notAWord: boolean;
 }
 
 function Keypad(props: KeypadProps) {
@@ -23,7 +23,7 @@ function Keypad(props: KeypadProps) {
     <div className="keypad">
       <div className="keypad-row">
         {Keypad_Letters_ROW1.map((letter) => {
-          const color = props.usedKeys[letter.key];
+          const color = props.usedKeys[letter.key]?.color;
           return (
             <button
               key={letter.key}
@@ -37,7 +37,7 @@ function Keypad(props: KeypadProps) {
       </div>
       <div className="keypad-row">
         {Keypad_Letters_ROW2.map((letter) => {
-          const color = props.usedKeys[letter.key];
+          const color = props.usedKeys[letter.key]?.color;
           return (
             <button
               key={letter.key}
@@ -51,7 +51,7 @@ function Keypad(props: KeypadProps) {
       </div>
       <div className="keypad-row">
         {Keypad_Letters_ROW3.map((letter) => {
-          const color = props.usedKeys[letter.key];
+          const color = props.usedKeys[letter.key]?.color;
           return (
             <button
               key={letter.key}
@@ -75,7 +75,7 @@ function Keypad(props: KeypadProps) {
           disabled={!props.canSubmit}
           onClick={() => clickHandle("Enter")}
         >
-          {props.notAWord ? "NOT A WORD" : "SUBMIT"}
+          SUBMIT
         </button>
       </div>
     </div>

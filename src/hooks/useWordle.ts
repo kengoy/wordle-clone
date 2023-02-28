@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { WORDLE_MAX_LETTERS, WORDLE_MAX_TURN_BY_MODE } from "../common/config";
+import { WORDLE_MAX_LETTERS, WORDLE_MAX_TURN } from "../common/config";
 import {
   GuessLetter,
   GuessState,
   GuessStateString,
   SettingsState,
+  SETTINGS_MODE,
+  UsedLetters,
 } from "../common/type";
 
 const WORDLE_API_BASE = import.meta.env.VITE_WORDLE_API_URL;
@@ -22,7 +24,7 @@ interface WordleIF {
   currentGuess: string; // Current string input by user for the current turn before submitting
   guesses: GuessLetter[][]; // Stored words data with color information in each row
   isCorrect: boolean; // True when the latest guess is correct
-  usedKeys: { [key: string]: string }; // Letter with current color information to be used by Keypad component
+  usedLetters: UsedLetters; // Letter with current color information and the position in the answer word.
   answer: string; // Answer word revealed when finishGame() is called.
   handleKeyInput: (e: KeyboardEvent) => void; // Callback function when user types on keyboard or clicks on Keypad.
   errMsg: string; // Error Message to be shown to users in case submitted word is 'Not a word' etc.
@@ -33,6 +35,7 @@ interface GameInfo {
   id: number;
   key: string;
   wordID: number;
+  mode: SETTINGS_MODE;
 }
 
 function useWordle(): WordleIF {
@@ -40,13 +43,13 @@ function useWordle(): WordleIF {
     id: 0,
     key: "",
     wordID: 0,
+    mode: SETTINGS_MODE.NORMAL,
   });
   const [turn, setTurn] = useState<number>(0);
   const [currentGuess, setCurrentGuess] = useState<string>("");
   const [guesses, setGuesses] = useState<GuessLetter[][]>(Array(6).fill(null));
-  const [history, setHistory] = useState<string[]>([]);
   const [isCorrect, setIsCorrect] = useState<boolean>(false);
-  const [usedKeys, setUsedKeys] = useState<{ [key: string]: string }>({});
+  const [usedLetters, setUsedLetters] = useState<UsedLetters>({});
   const [answer, setAnswer] = useState<string>("");
   const [errMsg, setErrMsg] = useState<string>("");
 
@@ -58,6 +61,7 @@ function useWordle(): WordleIF {
           id: data.data.id,
           key: data.data.key,
           wordID: data.data.wordId,
+          mode: settings.mode,
         });
       } else {
         setErrMsg(data.errMsg);
@@ -81,13 +85,10 @@ function useWordle(): WordleIF {
   function handleKeyInput(e: KeyboardEvent) {
     const key = e.key;
     if (key === "Enter") {
-      if (turn > WORDLE_MAX_LETTERS) {
+      if (currentGuess.length < WORDLE_MAX_LETTERS) {
         return;
       }
-      if (history.includes(currentGuess)) {
-        return;
-      }
-      if (currentGuess.length !== WORDLE_MAX_LETTERS) {
+      if (gameInfo.mode === SETTINGS_MODE.HARD && !validateGuessForHardMode()) {
         return;
       }
       guess();
@@ -110,10 +111,47 @@ function useWordle(): WordleIF {
     }
   }
 
+  function validateGuessForHardMode() {
+    const knownLetters = Object.keys(usedLetters).filter(
+      (letter) =>
+        usedLetters[letter].color !== GuessStateString[GuessState.GREY]
+    );
+    for (const letter of knownLetters) {
+      if (usedLetters[letter].color === GuessStateString[GuessState.GREEN]) {
+        const positions = usedLetters[letter].positions;
+        for (let i = 0; i < positions.length; i++) {
+          if (letter !== currentGuess[positions[i]]) {
+            setErrMsg(
+              `'${letter.toUpperCase()}' must be in the ${positions[i] + 1}${
+                positions[i] === 0
+                  ? "st"
+                  : positions[i] === 1
+                  ? "nd"
+                  : positions[i] === 2
+                  ? "rd"
+                  : "th"
+              } position.`
+            );
+            return false;
+          }
+        }
+      }
+      if (
+        usedLetters[letter].color === GuessStateString[GuessState.YELLOW] &&
+        currentGuess.indexOf(letter) === -1
+      ) {
+        setErrMsg(`'${letter.toUpperCase()}' must exist in the word.`);
+        return false;
+      }
+    }
+    return true;
+  }
+
   async function postData(url: string = "", data: object = {}) {
     try {
       const response = await fetch(url, {
         method: "POST",
+        credentials: "omit",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
@@ -152,7 +190,7 @@ function useWordle(): WordleIF {
     });
   }
 
-  function addNewGuess(guess: GuessLetter[]) {
+  function addNewGuess(guess: GuessLetter[]): void {
     let correct = true;
     let guessString = "";
 
@@ -160,29 +198,41 @@ function useWordle(): WordleIF {
       guessString += item.letter;
       if (item.state !== GuessState.GREEN) correct = false;
     });
-
     if (correct) setIsCorrect(true);
 
-    setHistory([...history, guessString]);
     const newGuesses = [...guesses];
     newGuesses[turn] = guess.slice();
     setGuesses(newGuesses);
     setTurn(turn + 1);
     setCurrentGuess("");
 
-    setUsedKeys((prevUsedKeys) => {
-      const newKeys = { ...prevUsedKeys };
-      guess.forEach((item) => {
-        const currentColor = newKeys[item.letter];
+    setUsedLetters((prevUsedLetters) => {
+      const newKeys = { ...prevUsedLetters };
+      guess.forEach((item, index) => {
+        const currentColor = newKeys[item.letter]?.color;
         if (item.state === GuessState.GREEN) {
-          newKeys[item.letter] = GuessStateString[item.state];
+          if (
+            newKeys[item.letter] &&
+            newKeys[item.letter].color === GuessStateString[GuessState.GREEN] &&
+            !newKeys[item.letter].positions.includes(index)
+          ) {
+            newKeys[item.letter].positions.push(index);
+          } else {
+            newKeys[item.letter] = {
+              color: GuessStateString[item.state],
+              positions: [index],
+            };
+          }
           return;
         }
         if (
           item.state === GuessState.YELLOW &&
           currentColor !== GuessStateString[GuessState.GREEN]
         ) {
-          newKeys[item.letter] = GuessStateString[item.state];
+          newKeys[item.letter] = {
+            color: GuessStateString[item.state],
+            positions: [],
+          };
           return;
         }
         if (
@@ -190,7 +240,10 @@ function useWordle(): WordleIF {
           currentColor !== GuessStateString[GuessState.GREEN] &&
           currentColor !== GuessStateString[GuessState.YELLOW]
         ) {
-          newKeys[item.letter] = GuessStateString[item.state];
+          newKeys[item.letter] = {
+            color: GuessStateString[item.state],
+            positions: [],
+          };
           return;
         }
       });
@@ -198,20 +251,14 @@ function useWordle(): WordleIF {
     });
   }
 
-  function reset(settings: SettingsState) {
+  function reset(settings: SettingsState): void {
     setTurn(0);
     setCurrentGuess("");
-    setGuesses(Array(WORDLE_MAX_TURN_BY_MODE[settings.mode]).fill(null));
-    setHistory([]);
+    setGuesses(Array(WORDLE_MAX_TURN).fill(null));
     setIsCorrect(false);
-    setUsedKeys({});
+    setUsedLetters({});
     setAnswer("");
     setErrMsg("");
-    setGameInfo({
-      id: 0,
-      key: "",
-      wordID: 0,
-    });
   }
 
   return {
@@ -221,7 +268,7 @@ function useWordle(): WordleIF {
     currentGuess,
     guesses,
     isCorrect,
-    usedKeys,
+    usedLetters,
     answer,
     handleKeyInput,
     errMsg,

@@ -11,6 +11,13 @@ export interface GuessLetter {
   state: GuessState;
 }
 
+export interface UsedLetters {
+  [key: string]: {
+    color: string;
+    positions: number[]; // used for Hard mode.
+  };
+}
+
 export enum SETTINGS_MODE {
   NORMAL = 0,
   HARD,

@@ -66,6 +66,12 @@ button {
   margin: 20px 0;
 }
 
+.wordle-header > h1 > span {
+  font-size: 0.6em;
+  font-style: italic;
+  color: pink;
+}
+
 /* Settings */
 .settings {
   position: absolute;
@@ -336,5 +342,7 @@ button {
 
 /* Error Message */
 .error-message {
+  font-size: 1.2em;
   color: #ff0033;
+  animation: bounce 0.2s ease-in-out forwards;
 }

@@ -65,7 +65,7 @@ function Settings(props: SettingsProps) {
       <SettingsItem
         settingsProps={props}
         title="Hard Mode"
-        description="You can guess only 4 times. Changing mode will restart a new game."
+        description="Any revealed hints must be used in subsequent guesses. Changing mode will restart a new game."
         type={SettingsType.SWITCH}
       />
     </div>

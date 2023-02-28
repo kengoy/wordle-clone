@@ -12,7 +12,7 @@ import {
   SettingsAction,
   SettingsState,
 } from "../common/type";
-import { WORDLE_MAX_LETTERS, WORDLE_MAX_TURN_BY_MODE } from "../common/config";
+import { WORDLE_MAX_LETTERS, WORDLE_MAX_TURN } from "../common/config";
 import { ErrorMsg } from "../common/string";
 
 const initialSettings: SettingsState = {
@@ -39,7 +39,7 @@ function Wordle() {
     currentGuess,
     guesses,
     isCorrect,
-    usedKeys,
+    usedLetters,
     answer,
     handleKeyInput,
     errMsg,
@@ -55,7 +55,7 @@ function Wordle() {
   useEffect(() => {
     window.addEventListener("keyup", handleKeyInput);
 
-    if (isCorrect || turn > WORDLE_MAX_TURN_BY_MODE[settings.mode] - 1) {
+    if (isCorrect || turn > WORDLE_MAX_TURN - 1) {
       setTimeout(() => {
         finishGame();
         setShowModal(true);
@@ -77,11 +77,15 @@ function Wordle() {
             element={
               <div>
                 <div className="wordle-header">
-                  <h1>Wordle</h1>
+                  <h1>
+                    Wordle{" "}
+                    {settings.mode === SETTINGS_MODE.HARD && <span>HARD</span>}
+                  </h1>
                   {errMsg === ErrorMsg.NETWORK_ERROR && (
-                    <p className="error-message">
-                      SERVER ERROR. Check your local Wordle-API server.
-                    </p>
+                    <div className="error-message">
+                      <p>SERVER ERROR</p>
+                      <p>Check your local Wordle-API server.</p>
+                    </div>
                   )}
                   <NavLink to="/settings">
                     <div className="settings">
@@ -97,12 +101,9 @@ function Wordle() {
                   turn={turn}
                 />
                 <Keypad
-                  usedKeys={usedKeys}
+                  usedKeys={usedLetters}
                   onKeyPressedCb={handleKeyInput}
                   canSubmit={currentGuess.length === WORDLE_MAX_LETTERS}
-                  notAWord={
-                    currentGuess.length === 5 && errMsg === "Not a word"
-                  }
                 />
                 {showModal && (
                   <Modal
@@ -114,6 +115,9 @@ function Wordle() {
                       startNewGame(settings);
                     }}
                   />
+                )}
+                {errMsg && errMsg !== ErrorMsg.NETWORK_ERROR && (
+                  <p className="error-message">{errMsg}</p>
                 )}
               </div>
             }
