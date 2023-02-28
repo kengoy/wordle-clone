@@ -218,9 +218,17 @@ button {
     line-height: 0.8;
   }
 
+  .settings {
+    font-size: 1.6rem;
+    top: 0;
+    right: 60px;
+  }
+
   .row > div {
     width: 40px;
     height: 40px;
+    font-size: 2em;
+    line-height: 40px;
   }
   .keypad-row > button {
     margin: 3px;
