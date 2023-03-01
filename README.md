@@ -11,6 +11,13 @@ The general structure is that `src/components/Wordle.tsx` is the main component 
 
 ## Dev environment quick start
 
+### Prerequisites
+
+1. [Install Node.js and npm](https://nodejs.org/en/download/) v18.10.0 (npm 9.5.1) or higher
+1. [Install Python 3](https://www.python.org/downloads/) 3.9 or higher
+
+### Run a local Wordle-API server
+
 Clone my customized [wordle-API](https://github.com/kengoy/wordle-API) and run the Wordle-API server on your local with the following commands.
 
 `python3 -m venv .venv`
@@ -28,6 +35,8 @@ Clone my customized [wordle-API](https://github.com/kengoy/wordle-API) and run t
 `FLASK_DEBUG=1 flask run --host=127.0.0.1`
 
 The dev server should accessible on http://127.0.0.1:5000. The customized Wordle-API server is allowing ('Access-Control-Allow-Origin', '\*') and http access for local development purpose.
+
+### Run Wordle Clone app
 
 On another terminal, run this Wordle Clone app with the following commands.
 
