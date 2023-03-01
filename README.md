@@ -1,7 +1,7 @@
 # Wordle Clone
 
 This is a Wordle Clone app built using TypeScript & React with Vite.
-There is a settings where you can change the mode to HARD: you need to solve within 4 turns instead of 6 turns in normal mode.
+There is a settings where you can change the mode to HARD: you need to use any revealed hints in subsequent guesses.
 
 By using [wordle-API](https://github.com/exciteabletom/wordle-API), guessing logic is completely server-side so that client-side is not able to know the answers until user solves or fails to solve within the required turns.
 
